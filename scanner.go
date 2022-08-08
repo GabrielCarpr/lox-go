@@ -4,8 +4,14 @@ import (
 	"fmt"
 )
 
-func GetScanner(source string) *Scanner {
-	return &Scanner{source, 0, 1, 0, false}
+func NewScanner(source string) *Scanner {
+	return &Scanner{
+		source:        source,
+		start:         0,
+		line:          1,
+		current:       0,
+		containsError: false,
+		tokens:        make([]Token, 0)}
 }
 
 type Scanner struct {
@@ -14,83 +20,143 @@ type Scanner struct {
 	line          int
 	current       int
 	containsError bool
+	tokens        []Token
 }
 
-func (s *Scanner) Scan() ([]Token, error) {
-	tokens := make([]Token, 0)
-
+func (s *Scanner) Scan() {
 	for !s.isAtEnd() {
-		token, err := s.tokenize()
+		s.start = s.current
+		err := s.scan()
 		if err != nil {
 			report(err, s.line)
 			s.containsError = true
 		}
-		tokens = append(tokens, token)
 	}
 
-	tokens = append(tokens, Token{
-		tokenType: EOF,
-		lexeme:    "",
-		literal:   "",
+	s.tokenize(EOF, nil)
+}
+
+func (s *Scanner) tokenize(lex Lexeme, literal interface{}) error {
+	text := s.source[s.start:s.current]
+
+	s.tokens = append(s.tokens, Token{
+		tokenType: lex,
+		lexeme:    text,
+		literal:   literal,
 		line:      s.line,
 	})
 
-	return tokens, nil
+	return nil
 }
 
-func (s *Scanner) tokenize() (Token, error) {
-	lex, err := s.scan()
-	if err != nil {
-		return Token{}, err
-	}
-
-	text := s.source[s.start:s.current]
-
-	return Token{
-		tokenType: lex,
-		lexeme:    text,
-		literal:   "",
-		line:      s.line,
-	}, nil
-}
-
-func (s *Scanner) scan() (Lexeme, error) {
+func (s *Scanner) scan() error {
 	char := s.advance()
 
-	var lex Lexeme
 	switch char {
-	case '(':
-		lex = LEFT_PAREN
-	case ')':
-		lex = RIGHT_PAREN
-	case '{':
-		lex = LEFT_PAREN
-	case '}':
-		lex = RIGHT_PAREN
-	case ',':
-		lex = COMMA
-	case '.':
-		lex = DOT
-	case '-':
-		lex = MINUS
-	case '+':
-		lex = PLUS
-	case ';':
-		lex = SEMICOLON
-	case '*':
-		lex = STAR
+	case "(":
+		s.tokenize(LEFT_PAREN, nil)
+		break
+	case ")":
+		s.tokenize(RIGHT_PAREN, nil)
+		break
+	case "{":
+		s.tokenize(LEFT_PAREN, nil)
+		break
+	case "}":
+		s.tokenize(RIGHT_PAREN, nil)
+		break
+	case ",":
+		s.tokenize(COMMA, nil)
+		break
+	case ".":
+		s.tokenize(DOT, nil)
+		break
+	case "-":
+		s.tokenize(MINUS, nil)
+		break
+	case "+":
+		s.tokenize(PLUS, nil)
+		break
+	case ";":
+		s.tokenize(SEMICOLON, nil)
+		break
+	case "*":
+		s.tokenize(STAR, nil)
+		break
+	case "!":
+		if s.matchNext("=") {
+			s.tokenize(BANG_EQUAL, nil)
+		} else {
+			s.tokenize(BANG, nil)
+		}
+		break
+	case "=":
+		if s.matchNext("=") {
+			s.tokenize(EQUAL_EQUAL, nil)
+		} else {
+			s.tokenize(EQUAL, nil)
+		}
+	case "<":
+		if s.matchNext("=") {
+			s.tokenize(LESS_EQUAL, nil)
+		} else {
+			s.tokenize(LESS, nil)
+		}
+		break
+	case ">":
+		if s.matchNext("=") {
+			s.tokenize(GREATER_EQUAL, nil)
+		} else {
+			s.tokenize(GREATER, nil)
+		}
+		break
+	case "/":
+		if s.matchNext("/") {
+			for s.peek() != "\n" && !s.isAtEnd() {
+				s.advance()
+			}
+		} else {
+			s.tokenize(SLASH, nil)
+		}
+		break
+	case " ":
+	case "\r":
+	case "\t":
+	case "":
+		break
+
+	case "\n":
+		s.line++
+		break
+
 	default:
-		return 0, fmt.Errorf("unexpected character: %s", string(char))
+		return fmt.Errorf("unexpected character: %s", string(char))
 	}
 
-	return lex, nil
+	return nil
 }
 
 func (s *Scanner) isAtEnd() bool {
 	return s.current >= len(s.source)
 }
 
-func (s *Scanner) advance() rune {
+func (s *Scanner) advance() string {
 	s.current++
-	return rune(s.source[s.current])
+	return string(s.source[s.current-1])
+}
+
+func (s *Scanner) matchNext(expected string) bool {
+	if s.peek() != expected {
+		return false
+	}
+
+	s.advance()
+	return true
+}
+
+func (s *Scanner) peek() string {
+	if s.isAtEnd() {
+		return "0"
+	}
+	return string(s.source[s.current])
 }

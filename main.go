@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,40 +10,33 @@ import (
 func main() {
 	args := os.Args
 
-	var err error
 	if len(args) > 2 {
 		fmt.Print("Usage: glox [script]\n")
 	} else if len(args) == 2 {
-		err = runFile(args[1])
+		runFile(args[1])
 	} else {
-		err = runPrompt()
-	}
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		runPrompt()
 	}
 }
 
-func runFile(path string) error {
+func runFile(path string) {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
-		return err
+		report(err, 0)
+
 	}
 	source := string(content)
 
-	err = run(source)
-	return err
+	run(source)
 }
 
-func runPrompt() error {
-
+func runPrompt() {
 	for {
 		fmt.Print("> ")
-		var line string
-		_, err := fmt.Scanln(&line)
+		bio := bufio.NewReader(os.Stdin)
+		line, err := bio.ReadString('\n')
 		if err != nil || line == "" {
-			return err
+			report(err, 0)
 		}
 		err = run(line)
 		if err != nil {
@@ -52,7 +46,13 @@ func runPrompt() error {
 }
 
 func run(source string) error {
-	fmt.Println(source)
+	scanner := NewScanner(source)
+	scanner.Scan()
+	tokens := scanner.tokens
+
+	for _, token := range tokens {
+		fmt.Println(token.String())
+	}
 
 	return nil
 }

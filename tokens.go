@@ -49,10 +49,10 @@ const (
 type Token struct {
 	tokenType Lexeme
 	lexeme    string
-	literal   string
+	literal   interface{}
 	line      int
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("%s %d %s", t.tokenType, t.lexeme, t.literal)
+	return fmt.Sprintf("Type: %d Lexeme: %s Literal: %v", t.tokenType, t.lexeme, t.literal)
 }
