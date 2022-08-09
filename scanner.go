@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 )
 
 func NewScanner(source string) *Scanner {
@@ -112,7 +114,7 @@ func (s *Scanner) scan() error {
 		break
 	case "/":
 		if s.matchNext("/") {
-			for s.peek() != "\n" && !s.isAtEnd() {
+			for s.peek(0) != "\n" && !s.isAtEnd() {
 				s.advance()
 			}
 		} else {
@@ -129,7 +131,16 @@ func (s *Scanner) scan() error {
 		s.line++
 		break
 
+	case "\"":
+		s.scanString()
+		break
+
 	default:
+		if isDigit(char) {
+			s.scanNumber()
+			break
+		}
+
 		return fmt.Errorf("unexpected character: %s", string(char))
 	}
 
@@ -146,7 +157,7 @@ func (s *Scanner) advance() string {
 }
 
 func (s *Scanner) matchNext(expected string) bool {
-	if s.peek() != expected {
+	if s.peek(0) != expected {
 		return false
 	}
 
@@ -154,9 +165,53 @@ func (s *Scanner) matchNext(expected string) bool {
 	return true
 }
 
-func (s *Scanner) peek() string {
+func (s *Scanner) peek(next int) string {
 	if s.isAtEnd() {
 		return "0"
 	}
-	return string(s.source[s.current])
+	return string(s.source[s.current+next])
+}
+
+func (s *Scanner) scanNumber() {
+	for isDigit(s.peek(0)) {
+		s.advance()
+	}
+
+	if s.peek(0) == "." && isDigit(s.peek(1)) {
+		s.advance()
+	}
+
+	for isDigit(s.peek(0)) {
+		s.advance()
+	}
+
+	literal, err := strconv.ParseFloat(s.source[s.start:s.current], 64)
+	if err != nil {
+		report(errors.New("could not parse number"), s.line)
+		s.containsError = true
+		return
+	}
+
+	s.tokenize(NUMBER, literal)
+}
+
+func (s *Scanner) scanString() {
+	for s.peek(0) != "\"" && !s.isAtEnd() {
+		if s.peek(0) == "\n" {
+			s.line++
+		}
+		s.advance()
+	}
+	if s.isAtEnd() {
+		report(errors.New("unterminated string"), s.line)
+		s.containsError = true
+		return
+	}
+	s.advance()
+	s.tokenize(STRING, s.source[s.start+1:s.current-1])
+}
+
+func isDigit(char string) bool {
+	_, err := strconv.ParseInt(char, 10, 64)
+	return err == nil
 }
