@@ -3,8 +3,28 @@ package main
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 )
+
+var keywords = map[string]Lexeme{
+	"or":     OR,
+	"and":    AND,
+	"class":  CLASS,
+	"else":   ELSE,
+	"false":  FALSE,
+	"for":    FOR,
+	"fun":    FUN,
+	"if":     IF,
+	"nil":    NIL,
+	"print":  PRINT,
+	"return": RETURN,
+	"super":  SUPER,
+	"this":   THIS,
+	"true":   TRUE,
+	"var":    VAR,
+	"while":  WHILE,
+}
 
 func NewScanner(source string) *Scanner {
 	return &Scanner{
@@ -141,6 +161,11 @@ func (s *Scanner) scan() error {
 			break
 		}
 
+		if isAlpha(char) {
+			s.scanIdentifier()
+			break
+		}
+
 		return fmt.Errorf("unexpected character: %s", string(char))
 	}
 
@@ -211,7 +236,30 @@ func (s *Scanner) scanString() {
 	s.tokenize(STRING, s.source[s.start+1:s.current-1])
 }
 
+func (s *Scanner) scanIdentifier() {
+	for isAlphaNumeric(s.peek(0)) {
+		s.advance()
+	}
+
+	text := s.source[s.start:s.current]
+	keyword, ok := keywords[text]
+	if ok {
+		s.tokenize(keyword, nil)
+	} else {
+		s.tokenize(IDENTIFIER, nil)
+	}
+}
+
 func isDigit(char string) bool {
 	_, err := strconv.ParseInt(char, 10, 64)
 	return err == nil
+}
+
+func isAlpha(char string) bool {
+	reggie := regexp.MustCompile("[a-zA-Z]")
+	return reggie.Match([]byte(char))
+}
+
+func isAlphaNumeric(char string) bool {
+	return isAlpha(char) || isDigit(char)
 }
