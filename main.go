@@ -47,12 +47,19 @@ func runPrompt() {
 
 func run(source string) error {
 	scanner := NewScanner(source)
+	parser := NewParser()
 	scanner.Scan()
 	tokens := scanner.tokens
+	parser.Load(tokens)
+	tree := parser.Parse()
 
+	fmt.Println("Tokens: ")
 	for _, token := range tokens {
 		fmt.Println(token.String())
 	}
+
+	printer := ASTPrinter{}
+	fmt.Println(printer.Print(tree))
 
 	return nil
 }
