@@ -1,6 +1,14 @@
 package main
 
-type Expr interface {
+type ExprVisitor[R any] interface {
+	VisitBinary(Binary) R
+}
+
+type Node struct {
+}
+
+func (e Node) Accept(visitor ExprVisitor) {
+
 }
 
 type Binary struct {
