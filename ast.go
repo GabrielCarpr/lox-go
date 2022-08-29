@@ -1,14 +1,17 @@
 package main
 
-type Visitor interface {
-	VisitBinaryExpr(expr Binary) interface{}
-	VisitUnaryExpr(expr Unary) interface{}
-	VisitGroupingExpr(expr Grouping) interface{}
-	VisitLiteralExpr(expr Literal) interface{}
+// Expressions
+type ExprVisitor interface {
+	VisitBinaryExpr(expr Binary) (interface{}, LoxError)
+	VisitUnaryExpr(expr Unary) (interface{}, LoxError)
+	VisitGroupingExpr(expr Grouping) (interface{}, LoxError)
+	VisitLiteralExpr(expr Literal) (interface{}, LoxError)
+	VisitVariableExpr(expr Variable) (interface{}, LoxError)
+	VisitAssignExpr(expr Assign) (interface{}, LoxError)
 }
 
 type Expr interface {
-	Accept(Visitor) interface{}
+	Accept(ExprVisitor) (interface{}, LoxError)
 }
 
 type Binary struct {
@@ -17,7 +20,7 @@ type Binary struct {
 	Right    Expr
 }
 
-func (b Binary) Accept(visitor Visitor) any {
+func (b Binary) Accept(visitor ExprVisitor) (interface{}, LoxError) {
 	return visitor.VisitBinaryExpr(b)
 }
 
@@ -26,7 +29,7 @@ type Unary struct {
 	Right    Expr
 }
 
-func (u Unary) Accept(visitor Visitor) any {
+func (u Unary) Accept(visitor ExprVisitor) (interface{}, LoxError) {
 	return visitor.VisitUnaryExpr(u)
 }
 
@@ -34,7 +37,7 @@ type Grouping struct {
 	Expression Expr
 }
 
-func (g Grouping) Accept(visitor Visitor) any {
+func (g Grouping) Accept(visitor ExprVisitor) (interface{}, LoxError) {
 	return visitor.VisitGroupingExpr(g)
 }
 
@@ -42,6 +45,60 @@ type Literal struct {
 	Value interface{}
 }
 
-func (l Literal) Accept(visitor Visitor) any {
+func (l Literal) Accept(visitor ExprVisitor) (interface{}, LoxError) {
 	return visitor.VisitLiteralExpr(l)
+}
+
+type Variable struct {
+	Name Token
+}
+
+func (v Variable) Accept(visitor ExprVisitor) (interface{}, LoxError) {
+	return visitor.VisitVariableExpr(v)
+}
+
+type Assign struct {
+	Name  Token
+	Value Expr
+}
+
+func (a Assign) Accept(visitor ExprVisitor) (interface{}, LoxError) {
+	return visitor.VisitAssignExpr(a)
+}
+
+// Statements
+
+type StmtVisitor interface {
+	VisitExpressionStmt(Expression) LoxError
+	VisitPrintStmt(Print) LoxError
+	VisitVarStmt(Var) LoxError
+}
+
+type Stmt interface {
+	Accept(StmtVisitor) LoxError
+}
+
+type Expression struct {
+	Expression Expr
+}
+
+func (e Expression) Accept(visitor StmtVisitor) LoxError {
+	return visitor.VisitExpressionStmt(e)
+}
+
+type Print struct {
+	Expression Expr
+}
+
+func (p Print) Accept(visitor StmtVisitor) LoxError {
+	return visitor.VisitPrintStmt(p)
+}
+
+type Var struct {
+	Name        Token
+	Initialiser *Expr
+}
+
+func (v Var) Accept(visitor StmtVisitor) LoxError {
+	return visitor.VisitVarStmt(v)
 }

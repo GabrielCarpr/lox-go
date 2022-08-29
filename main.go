@@ -23,14 +23,18 @@ func runFile(path string) {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
 		report(err, 0)
-
+		os.Exit(1)
 	}
-	source := string(content)
 
-	run(source)
+	lox := NewLox()
+	err = lox.Run(string(content))
+	if err != nil {
+		os.Exit(1)
+	}
 }
 
 func runPrompt() {
+	lox := NewLox()
 	for {
 		fmt.Print("> ")
 		bio := bufio.NewReader(os.Stdin)
@@ -38,36 +42,19 @@ func runPrompt() {
 		if err != nil || line == "" {
 			report(err, 0)
 		}
-		err = run(line)
-		if err != nil {
-			report(err, 0)
-		}
+		lox.Run(line)
 	}
-}
-
-func run(source string) error {
-	scanner := NewScanner(source)
-	parser := NewParser()
-	scanner.Scan()
-	tokens := scanner.tokens
-	parser.Load(tokens)
-	tree := parser.Parse()
-
-	fmt.Println("Tokens: ")
-	for _, token := range tokens {
-		fmt.Println(token.String())
-	}
-
-	printer := ASTPrinter{}
-	fmt.Println(printer.Print(tree))
-
-	return nil
 }
 
 func report(message error, line int) {
+	errorName := "Error"
+	if loxError, ok := message.(LoxError); ok {
+		errorName = loxError.Type()
+	}
+
 	if line != 0 {
-		fmt.Printf("[line %d] Error: %s\n", line, message.Error())
+		fmt.Printf("[line %d] %s: %s\n", line, errorName, message.Error())
 	} else {
-		fmt.Printf("Error: %s\n", message.Error())
+		fmt.Printf("%s: %s\n", errorName, message.Error())
 	}
 }
