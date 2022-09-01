@@ -86,6 +86,25 @@ func (i *Interpreter) VisitBlockStmt(stmt Block) LoxError {
 	return i.executeBlock(stmt.Statements, NewScopedEnvironment(i.environment))
 }
 
+func (i *Interpreter) VisitIfStmt(stmt If) LoxError {
+	condition, err := i.evaluate(stmt.Condition)
+	if err != nil {
+		return err
+	}
+
+	if i.isTruthy(condition) {
+		if err := i.execute(stmt.Then); err != nil {
+			return err
+		}
+	} else if stmt.Else != nil {
+		if err := i.execute(stmt.Else); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (i *Interpreter) VisitVariableExpr(expr Variable) (interface{}, LoxError) {
 	return i.environment.Get(expr.Name)
 }
@@ -158,6 +177,25 @@ func (i *Interpreter) VisitAssignExpr(expr Assign) (interface{}, LoxError) {
 
 	err = i.environment.Assign(expr.Name, value)
 	return value, err
+}
+
+func (i *Interpreter) VisitLogicalExpr(expr Logical) (interface{}, LoxError) {
+	left, err := i.evaluate(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+
+	if expr.Operator.tokenType == OR {
+		if i.isTruthy(left) {
+			return left, nil
+		}
+	} else {
+		if !i.isTruthy(left) {
+			return left, nil
+		}
+	}
+
+	return i.evaluate(expr.Right)
 }
 
 // Private methods

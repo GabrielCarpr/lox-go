@@ -81,6 +81,10 @@ func (p *Parser) statement() (Stmt, error) {
 		return p.block()
 	}
 
+	if p.match(IF) {
+		return p.ifStatement()
+	}
+
 	return p.expressionStatement()
 }
 
@@ -89,8 +93,8 @@ func (p *Parser) printStatement() (Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	p.consume(SEMICOLON, "';' expected after print value")
-	return Print{value}, nil
+	_, err = p.consume(SEMICOLON, "';' expected after print value")
+	return Print{value}, err
 }
 
 func (p *Parser) block() (Stmt, error) {
@@ -107,13 +111,45 @@ func (p *Parser) block() (Stmt, error) {
 	return Block{statements}, err
 }
 
+func (p *Parser) ifStatement() (Stmt, error) {
+	_, err := p.consume(LEFT_PAREN, "'(' expected after 'if'")
+	if err != nil {
+		return nil, err
+	}
+
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(RIGHT_PAREN, "')' expected after 'if' condition")
+	if err != nil {
+		return nil, err
+	}
+
+	thenBranch, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	var elseBranch Stmt
+	if p.match(ELSE) {
+		elseBranch, err = p.statement()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return If{condition, thenBranch, elseBranch}, nil
+}
+
 func (p *Parser) expressionStatement() (Stmt, error) {
 	value, err := p.expression()
 	if err != nil {
 		return nil, err
 	}
-	p.consume(SEMICOLON, "';' expected after value")
-	return Expression{value}, nil
+	_, err = p.consume(SEMICOLON, "';' expected after value")
+	return Expression{value}, err
 }
 
 func (p *Parser) expression() (Expr, error) {
@@ -121,7 +157,7 @@ func (p *Parser) expression() (Expr, error) {
 }
 
 func (p *Parser) assignment() (Expr, error) {
-	expr, err := p.equality()
+	expr, err := p.or()
 	if err != nil {
 		return nil, err
 	}
@@ -138,6 +174,36 @@ func (p *Parser) assignment() (Expr, error) {
 		}
 		return nil, p.error(equals, "Invalid assignment target")
 	}
+	return expr, nil
+}
+
+func (p *Parser) or() (Expr, error) {
+	expr, err := p.and()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(OR) {
+		operator := p.previous()
+		right, err := p.and()
+		return Logical{expr, operator, right}, err
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) and() (Expr, error) {
+	expr, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(AND) {
+		operator := p.previous()
+		right, err := p.equality()
+		return Logical{expr, operator, right}, err
+	}
+
 	return expr, nil
 }
 
@@ -248,8 +314,8 @@ func (p *Parser) primary() (Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		p.consume(RIGHT_PAREN, "Expect ')' after expression")
-		return Grouping{expr}, nil
+		_, err = p.consume(RIGHT_PAREN, "Expect ')' after expression")
+		return Grouping{expr}, err
 	}
 
 	if p.match(IDENTIFIER) {

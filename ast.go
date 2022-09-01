@@ -8,6 +8,7 @@ type ExprVisitor interface {
 	VisitLiteralExpr(expr Literal) (interface{}, LoxError)
 	VisitVariableExpr(expr Variable) (interface{}, LoxError)
 	VisitAssignExpr(expr Assign) (interface{}, LoxError)
+	VisitLogicalExpr(expr Logical) (interface{}, LoxError)
 }
 
 type Expr interface {
@@ -66,6 +67,16 @@ func (a Assign) Accept(visitor ExprVisitor) (interface{}, LoxError) {
 	return visitor.VisitAssignExpr(a)
 }
 
+type Logical struct {
+	Left     Expr
+	Operator Token
+	Right    Expr
+}
+
+func (l Logical) Accept(visitor ExprVisitor) (interface{}, LoxError) {
+	return visitor.VisitLogicalExpr(l)
+}
+
 // Statements
 
 type StmtVisitor interface {
@@ -73,6 +84,7 @@ type StmtVisitor interface {
 	VisitPrintStmt(Print) LoxError
 	VisitVarStmt(Var) LoxError
 	VisitBlockStmt(Block) LoxError
+	VisitIfStmt(If) LoxError
 }
 
 type Stmt interface {
@@ -110,4 +122,14 @@ type Block struct {
 
 func (b Block) Accept(visitor StmtVisitor) LoxError {
 	return visitor.VisitBlockStmt(b)
+}
+
+type If struct {
+	Condition Expr
+	Then      Stmt
+	Else      Stmt
+}
+
+func (i If) Accept(visitor StmtVisitor) LoxError {
+	return visitor.VisitIfStmt(i)
 }
