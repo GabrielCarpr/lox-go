@@ -1,1 +1,22 @@
-print "hello" + " " + "charlotte";
+var a = "global";
+var b = "global";
+var c = "global";
+
+{
+    a = "outer a";
+    var b = "outer b";
+    
+    {
+        a = "inner a";
+        print a;
+        print b;
+        print c;
+    }
+    print a;
+    print b;
+    print c;
+}
+
+print a;
+print b;
+print c;

@@ -77,6 +77,10 @@ func (p *Parser) statement() (Stmt, error) {
 		return p.printStatement()
 	}
 
+	if p.match(LEFT_BRACE) {
+		return p.block()
+	}
+
 	return p.expressionStatement()
 }
 
@@ -87,6 +91,20 @@ func (p *Parser) printStatement() (Stmt, error) {
 	}
 	p.consume(SEMICOLON, "';' expected after print value")
 	return Print{value}, nil
+}
+
+func (p *Parser) block() (Stmt, error) {
+	statements := make([]Stmt, 0)
+	for !p.check(RIGHT_BRACE) && !p.isAtEnd() {
+		dec, err := p.declaration()
+		if err != nil {
+			return nil, err
+		}
+		statements = append(statements, dec)
+	}
+
+	_, err := p.consume(RIGHT_BRACE, "'}' expected after block")
+	return Block{statements}, err
 }
 
 func (p *Parser) expressionStatement() (Stmt, error) {

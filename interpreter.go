@@ -6,7 +6,7 @@ import (
 )
 
 func NewInterpreter() *Interpreter {
-	return &Interpreter{NewEnvironment()}
+	return &Interpreter{NewGlobalEnvironment()}
 }
 
 type Interpreter struct {
@@ -80,6 +80,10 @@ func (i *Interpreter) VisitVarStmt(stmt Var) LoxError {
 		i.environment.Define(stmt.Name.lexeme, nil)
 	}
 	return nil
+}
+
+func (i *Interpreter) VisitBlockStmt(stmt Block) LoxError {
+	return i.executeBlock(stmt.Statements, NewScopedEnvironment(i.environment))
 }
 
 func (i *Interpreter) VisitVariableExpr(expr Variable) (interface{}, LoxError) {
@@ -160,6 +164,24 @@ func (i *Interpreter) VisitAssignExpr(expr Assign) (interface{}, LoxError) {
 
 func (i *Interpreter) execute(stmt Stmt) LoxError {
 	return stmt.Accept(i)
+}
+
+func (i *Interpreter) executeBlock(stmts []Stmt, env *Environment) LoxError {
+	previous := i.environment
+	defer func() {
+		i.environment = previous
+	}()
+
+	i.environment = env
+
+	for _, stmt := range stmts {
+		err := i.execute(stmt)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (i *Interpreter) evaluate(expr Expr) (interface{}, LoxError) {

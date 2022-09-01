@@ -82,10 +82,10 @@ func (s *Scanner) scan() error {
 		s.tokenize(RIGHT_PAREN, nil)
 		break
 	case "{":
-		s.tokenize(LEFT_PAREN, nil)
+		s.tokenize(LEFT_BRACE, nil)
 		break
 	case "}":
-		s.tokenize(RIGHT_PAREN, nil)
+		s.tokenize(RIGHT_BRACE, nil)
 		break
 	case ",":
 		s.tokenize(COMMA, nil)

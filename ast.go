@@ -72,6 +72,7 @@ type StmtVisitor interface {
 	VisitExpressionStmt(Expression) LoxError
 	VisitPrintStmt(Print) LoxError
 	VisitVarStmt(Var) LoxError
+	VisitBlockStmt(Block) LoxError
 }
 
 type Stmt interface {
@@ -101,4 +102,12 @@ type Var struct {
 
 func (v Var) Accept(visitor StmtVisitor) LoxError {
 	return visitor.VisitVarStmt(v)
+}
+
+type Block struct {
+	Statements []Stmt
+}
+
+func (b Block) Accept(visitor StmtVisitor) LoxError {
+	return visitor.VisitBlockStmt(b)
 }

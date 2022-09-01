@@ -2,12 +2,17 @@ package main
 
 import "fmt"
 
-func NewEnvironment() *Environment {
-	return &Environment{make(map[string]interface{})}
+func NewGlobalEnvironment() *Environment {
+	return &Environment{nil, make(map[string]interface{})}
+}
+
+func NewScopedEnvironment(from *Environment) *Environment {
+	return &Environment{from, make(map[string]interface{})}
 }
 
 type Environment struct {
-	values map[string]interface{}
+	enclosed *Environment
+	values   map[string]interface{}
 }
 
 func (e *Environment) Define(name string, value interface{}) {
@@ -19,13 +24,23 @@ func (e *Environment) Assign(name Token, value interface{}) LoxError {
 		e.values[name.lexeme] = value
 		return nil
 	}
+
+	if e.enclosed != nil {
+		return e.enclosed.Assign(name, value)
+	}
+
 	return RuntimeError{name, fmt.Sprintf("Undefined variable '%s'", name.lexeme)}
 }
 
 func (e Environment) Get(name Token) (interface{}, LoxError) {
 	value, ok := e.values[name.lexeme]
-	if !ok {
-		return nil, RuntimeError{name, fmt.Sprintf("Undefined variable '%s'", name.lexeme)}
+	if ok {
+		return value, nil
 	}
-	return value, nil
+
+	if e.enclosed != nil {
+		return e.enclosed.Get(name)
+	}
+
+	return nil, RuntimeError{name, fmt.Sprintf("Undefined variable '%s'", name.lexeme)}
 }
