@@ -198,6 +198,25 @@ func (i *Interpreter) VisitLogicalExpr(expr Logical) (interface{}, LoxError) {
 	return i.evaluate(expr.Right)
 }
 
+func (i *Interpreter) VisitWhileStmt(stmt While) LoxError {
+	for true {
+		condition, err := i.evaluate(stmt.Condition)
+		if err != nil {
+			return err
+		}
+		if truthy, ok := condition.(bool); !truthy || !ok {
+			break
+		}
+
+		err = i.execute(stmt.Body)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Private methods
 
 func (i *Interpreter) execute(stmt Stmt) LoxError {

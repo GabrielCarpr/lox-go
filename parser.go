@@ -85,6 +85,10 @@ func (p *Parser) statement() (Stmt, error) {
 		return p.ifStatement()
 	}
 
+	if p.match(WHILE) {
+		return p.whileStatement()
+	}
+
 	return p.expressionStatement()
 }
 
@@ -141,6 +145,26 @@ func (p *Parser) ifStatement() (Stmt, error) {
 	}
 
 	return If{condition, thenBranch, elseBranch}, nil
+}
+
+func (p *Parser) whileStatement() (Stmt, error) {
+	_, err := p.consume(LEFT_PAREN, "'(' expected after while statement")
+	if err != nil {
+		return nil, err
+	}
+
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(RIGHT_PAREN, "')' expected after 'while' condition")
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := p.statement()
+	return While{condition, body}, err
 }
 
 func (p *Parser) expressionStatement() (Stmt, error) {
