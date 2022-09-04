@@ -1,1 +1,6 @@
-print print clock();
+fun hello(name) {
+    print "hello " + name;
+}
+
+hello("charlotte");
+hello("gabriel", "carpreau");

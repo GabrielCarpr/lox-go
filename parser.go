@@ -40,6 +40,8 @@ func (p *Parser) declaration() (Stmt, error) {
 	var err error
 	if p.match(VAR) {
 		result, err = p.varDeclaration()
+	} else if p.match(FUN) {
+		result, err = p.function("function")
 	} else {
 		result, err = p.statement()
 	}
@@ -71,6 +73,49 @@ func (p *Parser) varDeclaration() (Stmt, error) {
 		return nil, err
 	}
 	return Var{name, init}, nil
+}
+
+func (p *Parser) function(kind string) (Stmt, error) {
+	name, err := p.consume(IDENTIFIER, fmt.Sprintf("Expected %s name", kind))
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(LEFT_PAREN, fmt.Sprintf("'(' expected after %s name", kind))
+	if err != nil {
+		return nil, err
+	}
+
+	parameters := make([]Token, 0)
+	if !p.check(RIGHT_PAREN) {
+		for {
+			if len(parameters) >= 255 {
+				p.error(p.peek(), "Cannot have more than 255 parameters")
+			}
+			param, err := p.consume(IDENTIFIER, "Expected parameter name")
+			if err != nil {
+				return nil, err
+			}
+			parameters = append(parameters, param)
+
+			if !p.match(COMMA) {
+				break
+			}
+		}
+	}
+
+	_, err = p.consume(RIGHT_PAREN, "')' expected after parameters")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(LEFT_BRACE, fmt.Sprintf("'{' expected before %s body", kind))
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := p.block()
+	return Function{name, parameters, body}, err
 }
 
 func (p *Parser) statement() (Stmt, error) {
@@ -106,12 +151,12 @@ func (p *Parser) printStatement() (Stmt, error) {
 	return Print{value}, err
 }
 
-func (p *Parser) block() (Stmt, error) {
+func (p *Parser) block() (Block, error) {
 	statements := make([]Stmt, 0)
 	for !p.check(RIGHT_BRACE) && !p.isAtEnd() {
 		dec, err := p.declaration()
 		if err != nil {
-			return nil, err
+			return Block{}, err
 		}
 		statements = append(statements, dec)
 	}

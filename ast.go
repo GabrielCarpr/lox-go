@@ -102,6 +102,7 @@ type StmtVisitor interface {
 	VisitBlockStmt(Block) LoxError
 	VisitIfStmt(If) LoxError
 	VisitWhileStmt(While) LoxError
+	VisitFunctionStmt(Function) LoxError
 }
 
 type Stmt interface {
@@ -158,4 +159,14 @@ type While struct {
 
 func (w While) Accept(visitor StmtVisitor) LoxError {
 	return visitor.VisitWhileStmt(w)
+}
+
+type Function struct {
+	Name   Token
+	Params []Token
+	Body   Block
+}
+
+func (f Function) Accept(visitor StmtVisitor) LoxError {
+	return visitor.VisitFunctionStmt(f)
 }

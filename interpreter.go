@@ -89,7 +89,7 @@ func (i *Interpreter) VisitCallExpr(expr Call) (interface{}, LoxError) {
 
 	function, ok := callee.(Callable)
 	if !ok {
-		return nil, RuntimeError{expr.Paren, "Can only call functions and classes"}
+		return nil, RuntimeError{expr.Paren, fmt.Sprintf("Can only call functions and classes")}
 	}
 	if len(arguments) != function.Arity() {
 		return nil, RuntimeError{expr.Paren, fmt.Sprintf("Expected %d arguments, got %d", function.Arity(), len(arguments))}
@@ -130,6 +130,12 @@ func (i *Interpreter) VisitIfStmt(stmt If) LoxError {
 		}
 	}
 
+	return nil
+}
+
+func (i *Interpreter) VisitFunctionStmt(fn Function) LoxError {
+	function := &LoxFunction{fn}
+	i.environment.Define(fn.Name.lexeme, function)
 	return nil
 }
 
