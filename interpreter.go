@@ -139,6 +139,19 @@ func (i *Interpreter) VisitFunctionStmt(fn Function) LoxError {
 	return nil
 }
 
+func (i *Interpreter) VisitReturnStmt(ret Return) LoxError {
+	var value interface{}
+	var err LoxError
+	if ret.Value != nil {
+		value, err = i.evaluate(*ret.Value)
+		if err != nil {
+			return err
+		}
+	}
+
+	return ReturnError{value, ret.Keyword}
+}
+
 func (i *Interpreter) VisitVariableExpr(expr Variable) (interface{}, LoxError) {
 	return i.environment.Get(expr.Name)
 }

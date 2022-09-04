@@ -30,3 +30,22 @@ type DivideZeroError struct {
 func (e DivideZeroError) Type() string {
 	return "DivideZeroError"
 }
+
+// Not really an error, but used for bubbling up a return
+// using the same channel as errors
+type ReturnError struct {
+	Value       interface{}
+	ReturnToken Token
+}
+
+func (r ReturnError) Type() string {
+	return "ReturnError"
+}
+
+func (r ReturnError) Token() Token {
+	return r.ReturnToken
+}
+
+func (r ReturnError) Error() string {
+	return "Return"
+}

@@ -103,6 +103,7 @@ type StmtVisitor interface {
 	VisitIfStmt(If) LoxError
 	VisitWhileStmt(While) LoxError
 	VisitFunctionStmt(Function) LoxError
+	VisitReturnStmt(Return) LoxError
 }
 
 type Stmt interface {
@@ -169,4 +170,13 @@ type Function struct {
 
 func (f Function) Accept(visitor StmtVisitor) LoxError {
 	return visitor.VisitFunctionStmt(f)
+}
+
+type Return struct {
+	Keyword Token
+	Value   *Expr
+}
+
+func (r Return) Accept(visitor StmtVisitor) LoxError {
+	return visitor.VisitReturnStmt(r)
 }

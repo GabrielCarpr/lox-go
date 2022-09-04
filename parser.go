@@ -123,6 +123,10 @@ func (p *Parser) statement() (Stmt, error) {
 		return p.printStatement()
 	}
 
+	if p.match(RETURN) {
+		return p.returnStatement()
+	}
+
 	if p.match(LEFT_BRACE) {
 		return p.block()
 	}
@@ -149,6 +153,22 @@ func (p *Parser) printStatement() (Stmt, error) {
 	}
 	_, err = p.consume(SEMICOLON, "';' expected after print value")
 	return Print{value}, err
+}
+
+func (p *Parser) returnStatement() (Return, error) {
+	keyword := p.previous()
+
+	var value *Expr
+	if !p.check(SEMICOLON) {
+		val, err := p.expression()
+		if err != nil {
+			return Return{}, err
+		}
+		value = &val
+	}
+
+	_, err := p.consume(SEMICOLON, "';' expected after return statement")
+	return Return{keyword, value}, err
 }
 
 func (p *Parser) block() (Block, error) {

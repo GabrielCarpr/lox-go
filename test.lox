@@ -1,6 +1,5 @@
 fun hello(name) {
-    print "hello " + name;
+    return "hello " + name;
 }
 
-hello("charlotte");
-hello("gabriel", "carpreau");
+print hello("charlotte");

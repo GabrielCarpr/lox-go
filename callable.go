@@ -27,6 +27,9 @@ func (f *LoxFunction) Call(interpreter *Interpreter, args []interface{}) (interf
 	}
 
 	err := interpreter.executeBlock(f.declaration.Body.Statements, environment)
+	if ret, ok := err.(ReturnError); ok {
+		return ret.Value, nil
+	}
 	return nil, err
 }
 
