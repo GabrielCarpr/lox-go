@@ -6,11 +6,14 @@ import (
 )
 
 func NewInterpreter() *Interpreter {
-	return &Interpreter{NewGlobalEnvironment()}
+	globals := NewGlobalEnvironment()
+
+	return &Interpreter{globals, globals}
 }
 
 type Interpreter struct {
 	environment *Environment
+	globals     *Environment
 }
 
 func (i *Interpreter) Interpret(statements []Stmt) error {
@@ -67,6 +70,31 @@ func (i *Interpreter) VisitUnaryExpr(expr Unary) (interface{}, LoxError) {
 	}
 
 	return nil, nil
+}
+
+func (i *Interpreter) VisitCallExpr(expr Call) (interface{}, LoxError) {
+	callee, err := i.evaluate(expr.Callee)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := make([]interface{}, len(expr.Arguments))
+	for j, arg := range expr.Arguments {
+		argument, err := i.evaluate(arg)
+		if err != nil {
+			return nil, err
+		}
+		arguments[j] = argument
+	}
+
+	function, ok := callee.(Callable)
+	if !ok {
+		return nil, RuntimeError{expr.Paren, "Can only call functions and classes"}
+	}
+	if len(arguments) != function.Arity() {
+		return nil, RuntimeError{expr.Paren, fmt.Sprintf("Expected %d arguments, got %d", function.Arity(), len(arguments))}
+	}
+	return function.Call(i, arguments)
 }
 
 func (i *Interpreter) VisitVarStmt(stmt Var) LoxError {

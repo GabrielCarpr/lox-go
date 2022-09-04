@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 func NewGlobalEnvironment() *Environment {
-	return &Environment{nil, make(map[string]interface{})}
+	return &Environment{nil, native()}
 }
 
 func NewScopedEnvironment(from *Environment) *Environment {

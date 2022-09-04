@@ -1,5 +1,10 @@
 package main
 
+type Visitor interface {
+	ExprVisitor
+	StmtVisitor
+}
+
 // Expressions
 type ExprVisitor interface {
 	VisitBinaryExpr(expr Binary) (interface{}, LoxError)
@@ -9,6 +14,7 @@ type ExprVisitor interface {
 	VisitVariableExpr(expr Variable) (interface{}, LoxError)
 	VisitAssignExpr(expr Assign) (interface{}, LoxError)
 	VisitLogicalExpr(expr Logical) (interface{}, LoxError)
+	VisitCallExpr(expr Call) (interface{}, LoxError)
 }
 
 type Expr interface {
@@ -75,6 +81,16 @@ type Logical struct {
 
 func (l Logical) Accept(visitor ExprVisitor) (interface{}, LoxError) {
 	return visitor.VisitLogicalExpr(l)
+}
+
+type Call struct {
+	Callee    Expr
+	Paren     Token
+	Arguments []Expr
+}
+
+func (c Call) Accept(visitor ExprVisitor) (interface{}, LoxError) {
+	return visitor.VisitCallExpr(c)
 }
 
 // Statements
