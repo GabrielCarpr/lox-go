@@ -57,19 +57,20 @@ func (p *Parser) varDeclaration() (Stmt, error) {
 		return nil, err
 	}
 
-	var init Expr
+	var init *Expr = nil
 	if p.match(EQUAL) {
-		init, err = p.expression()
+		i, err := p.expression()
 		if err != nil {
 			return nil, err
 		}
+		init = &i
 	}
 
 	_, err = p.consume(SEMICOLON, "';' expected after variable declaration")
 	if err != nil {
 		return nil, err
 	}
-	return Var{name, &init}, nil
+	return Var{name, init}, nil
 }
 
 func (p *Parser) statement() (Stmt, error) {
@@ -83,6 +84,10 @@ func (p *Parser) statement() (Stmt, error) {
 
 	if p.match(IF) {
 		return p.ifStatement()
+	}
+
+	if p.match(FOR) {
+		return p.forStatement()
 	}
 
 	if p.match(WHILE) {
@@ -145,6 +150,72 @@ func (p *Parser) ifStatement() (Stmt, error) {
 	}
 
 	return If{condition, thenBranch, elseBranch}, nil
+}
+
+func (p *Parser) forStatement() (Stmt, error) {
+	_, err := p.consume(LEFT_PAREN, "'(' expected after for")
+	if err != nil {
+		return nil, err
+	}
+
+	var initializer Stmt
+	if p.match(SEMICOLON) {
+		initializer = nil
+	} else if p.match(VAR) {
+		initializer, err = p.varDeclaration()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		initializer, err = p.expressionStatement()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var condition Expr = nil
+	if !p.check(SEMICOLON) {
+		condition, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, err = p.consume(SEMICOLON, "';' expected after loop condition")
+	if err != nil {
+		return nil, err
+	}
+
+	var increment Expr = nil
+	if !p.check(RIGHT_PAREN) {
+		increment, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, err = p.consume(RIGHT_PAREN, "')' expected after loop clauses")
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	if increment != nil {
+		body = Block{[]Stmt{body, Expression{increment}}}
+	}
+
+	if condition == nil {
+		condition = Literal{true}
+	}
+	body = While{condition, body}
+
+	if initializer != nil {
+		body = Block{[]Stmt{initializer, body}}
+	}
+
+	return body, nil
 }
 
 func (p *Parser) whileStatement() (Stmt, error) {
