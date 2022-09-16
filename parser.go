@@ -427,7 +427,7 @@ func (p *Parser) factor() (Expr, error) {
 		return nil, err
 	}
 
-	for p.match(SLASH, STAR) {
+	for p.match(SLASH, STAR, PERCENT) {
 		operator := p.previous()
 		right, err := p.unary()
 		if err != nil {

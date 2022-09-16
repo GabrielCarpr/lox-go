@@ -1,5 +1,10 @@
-fun hello(name) {
-    return "hello " + name;
-}
+for (var i = 0; i < 100; i = i + 1) {
+    print i;
+    if (i % 3 == 0) {
+        print "fizz";
+    }
 
-print hello("charlotte");
+    if (i % 5 == 0) {
+        print "buzz";
+    }
+}

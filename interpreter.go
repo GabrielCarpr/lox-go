@@ -211,6 +211,17 @@ func (i *Interpreter) VisitBinaryExpr(expr Binary) (interface{}, LoxError) {
 		return left.(float64) < right.(float64), nil
 	case LESS_EQUAL:
 		return left.(float64) <= right.(float64), nil
+	case PERCENT:
+		leftNum, isLeftNum := left.(float64)
+		rightNum, isRightNum := right.(float64)
+		if !isLeftNum || !isRightNum {
+			return nil, RuntimeError{expr.Operator, "Operands must be two numbers"}
+		}
+		return int64(leftNum) % int64(rightNum), nil
+	case BANG_EQUAL:
+		return !i.isEqual(left, right), nil
+	case EQUAL_EQUAL:
+		return i.isEqual(left, right), nil
 	}
 
 	return nil, nil

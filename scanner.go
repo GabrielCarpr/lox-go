@@ -105,6 +105,8 @@ func (s *Scanner) scan() error {
 	case "*":
 		s.tokenize(STAR, nil)
 		break
+	case "%":
+		s.tokenize(PERCENT, nil)
 	case "!":
 		if s.matchNext("=") {
 			s.tokenize(BANG_EQUAL, nil)

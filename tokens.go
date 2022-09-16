@@ -43,6 +43,7 @@ const (
 	TRUE                 = "TRUE"
 	VAR                  = "VAR"
 	WHILE                = "WHILE"
+	PERCENT              = "PERCENT"
 	EOF                  = "EOF"
 )
 
