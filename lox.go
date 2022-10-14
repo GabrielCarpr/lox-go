@@ -1,9 +1,10 @@
 package main
 
 func NewLox() *Lox {
+	interpreter := NewInterpreter()
 	return &Lox{
 		NewParser(),
-		NewInterpreter(),
+		interpreter,
 	}
 }
 
@@ -14,6 +15,7 @@ type Lox struct {
 
 func (l *Lox) Run(source string) error {
 	scanner := NewScanner(source)
+	resolver := NewResolver(l.interpreter)
 	scanner.Scan()
 	tokens := scanner.tokens
 
@@ -23,5 +25,6 @@ func (l *Lox) Run(source string) error {
 		return err
 	}
 
+	resolver.Resolve(ast)
 	return l.interpreter.Interpret(ast)
 }

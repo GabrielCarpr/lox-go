@@ -44,3 +44,15 @@ func (e Environment) Get(name Token) (interface{}, LoxError) {
 
 	return nil, RuntimeError{name, fmt.Sprintf("Undefined variable '%s'", name.lexeme)}
 }
+
+func (e *Environment) AtDepth(depth int64) *Environment {
+	if depth < 0 {
+		panic(fmt.Sprintf("Cannot get environment depth of %d", depth))
+	}
+
+	if depth == 0 {
+		return e
+	}
+
+	return e.enclosed.AtDepth(depth - 1)
+}

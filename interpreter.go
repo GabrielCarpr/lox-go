@@ -8,7 +8,7 @@ import (
 func NewInterpreter() *Interpreter {
 	globals := NewGlobalEnvironment()
 
-	return &Interpreter{globals, globals}
+	return &Interpreter{globals, globals, make(map[Expr]int64)}
 }
 
 var _ Visitor = (&Interpreter{})
@@ -16,6 +16,7 @@ var _ Visitor = (&Interpreter{})
 type Interpreter struct {
 	environment *Environment
 	globals     *Environment
+	locals      map[Expr]int64
 }
 
 func (i *Interpreter) Interpret(statements []Stmt) error {
@@ -155,7 +156,7 @@ func (i *Interpreter) VisitReturnStmt(ret Return) LoxError {
 }
 
 func (i *Interpreter) VisitVariableExpr(expr Variable) (interface{}, LoxError) {
-	return i.environment.Get(expr.Name)
+	return i.lookupVariable(expr.Name, expr)
 }
 
 func (i *Interpreter) VisitBinaryExpr(expr Binary) (interface{}, LoxError) {
@@ -235,7 +236,11 @@ func (i *Interpreter) VisitAssignExpr(expr Assign) (interface{}, LoxError) {
 		return nil, err
 	}
 
-	err = i.environment.Assign(expr.Name, value)
+	distance, ok := i.locals[expr]
+	if ok {
+		i.environment.AtDepth(distance).Assign(expr.Name, value)
+	}
+
 	return value, err
 }
 
@@ -281,6 +286,10 @@ func (i *Interpreter) VisitWhileStmt(stmt While) LoxError {
 
 func (i *Interpreter) execute(stmt Stmt) LoxError {
 	return stmt.Accept(i)
+}
+
+func (i *Interpreter) resolve(expr Expr, depth int64) {
+	i.locals[expr] = depth
 }
 
 func (i *Interpreter) executeBlock(stmts []Stmt, env *Environment) LoxError {
@@ -329,22 +338,13 @@ func (i *Interpreter) isEqual(a interface{}, b interface{}) bool {
 	return a == b
 }
 
-func checkNumber(operator Token, value interface{}) (float64, *RuntimeError) {
-	if number, ok := value.(float64); ok {
-		return number, nil
+func (i *Interpreter) lookupVariable(name Token, expr Expr) (interface{}, LoxError) {
+	distance, ok := i.locals[expr]
+	if ok {
+		return i.environment.AtDepth(distance).Get(name)
+	} else {
+		return i.globals.Get(name)
 	}
-	return 0, &RuntimeError{operator, "Operand must be a number"}
-}
-
-func checkNumbers(operator Token, a interface{}, b interface{}) (aNum float64, bNum float64, err *RuntimeError) {
-	aNum, aOk := a.(float64)
-	bNum, bOk := b.(float64)
-
-	if !aOk || !bOk {
-		err = &RuntimeError{operator, "Must be a number"}
-	}
-
-	return aNum, bNum, nil
 }
 
 // Utility methods
@@ -376,4 +376,22 @@ func stringify(obj interface{}) string {
 	}
 
 	return fmt.Sprintf("%v+", obj)
+}
+
+func checkNumber(operator Token, value interface{}) (float64, *RuntimeError) {
+	if number, ok := value.(float64); ok {
+		return number, nil
+	}
+	return 0, &RuntimeError{operator, "Operand must be a number"}
+}
+
+func checkNumbers(operator Token, a interface{}, b interface{}) (aNum float64, bNum float64, err *RuntimeError) {
+	aNum, aOk := a.(float64)
+	bNum, bOk := b.(float64)
+
+	if !aOk || !bOk {
+		err = &RuntimeError{operator, "Must be a number"}
+	}
+
+	return aNum, bNum, nil
 }

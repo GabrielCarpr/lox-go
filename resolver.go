@@ -11,6 +11,10 @@ type Resolver struct {
 	scopes      []map[string]bool
 }
 
+func (r *Resolver) Resolve(ast []Stmt) {
+	r.resolveStmt(ast...)
+}
+
 func (r *Resolver) resolveStmt(stmts ...Stmt) {
 	for _, stmt := range stmts {
 		stmt.Accept(r)
@@ -164,7 +168,7 @@ func (r *Resolver) VisitUnaryExpr(unary Unary) (interface{}, LoxError) {
 func (r *Resolver) resolveLocal(expr Expr, name Token) {
 	for i, scope := range r.scopes {
 		if _, ok := scope[name.lexeme]; ok {
-			r.interpreter.resolve(expr, len(r.scopes)-1-i)
+			r.interpreter.resolve(expr, int64(len(r.scopes)-1-i))
 		}
 	}
 }
