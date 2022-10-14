@@ -17,10 +17,11 @@ var _ Callable = &LoxFunction{}
 
 type LoxFunction struct {
 	declaration Function
+	closure     *Environment
 }
 
 func (f *LoxFunction) Call(interpreter *Interpreter, args []interface{}) (interface{}, LoxError) {
-	environment := NewScopedEnvironment(interpreter.globals)
+	environment := NewScopedEnvironment(f.closure)
 
 	for i, param := range f.declaration.Params {
 		environment.Define(param.lexeme, args[i])

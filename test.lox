@@ -1,10 +1,11 @@
-for (var i = 0; i < 100; i = i + 1) {
-    print i;
-    if (i % 3 == 0) {
-        print "fizz";
+var a = "global";
+
+{
+    fun showA() {
+        print a;
     }
 
-    if (i % 5 == 0) {
-        print "buzz";
-    }
+    showA();
+    var a = "block";
+    showA();
 }

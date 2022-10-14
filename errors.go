@@ -6,6 +6,23 @@ type LoxError interface {
 	error
 }
 
+type CompileError struct {
+	SubjectToken Token
+	Message      string
+}
+
+func (e CompileError) Type() string {
+	return "CompileError"
+}
+
+func (e CompileError) Token() Token {
+	return e.SubjectToken
+}
+
+func (e CompileError) Error() string {
+	return e.Message
+}
+
 type RuntimeError struct {
 	SubjectToken Token
 	Message      string

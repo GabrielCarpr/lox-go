@@ -11,6 +11,8 @@ func NewInterpreter() *Interpreter {
 	return &Interpreter{globals, globals}
 }
 
+var _ Visitor = (&Interpreter{})
+
 type Interpreter struct {
 	environment *Environment
 	globals     *Environment
@@ -134,7 +136,7 @@ func (i *Interpreter) VisitIfStmt(stmt If) LoxError {
 }
 
 func (i *Interpreter) VisitFunctionStmt(fn Function) LoxError {
-	function := &LoxFunction{fn}
+	function := &LoxFunction{fn, i.environment}
 	i.environment.Define(fn.Name.lexeme, function)
 	return nil
 }
